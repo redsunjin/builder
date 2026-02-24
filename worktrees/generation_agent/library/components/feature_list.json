@@ -1,0 +1,9 @@
+{
+    "type": "component",
+    "name": "feature_list",
+    "html_template": "<div class=\"p-4 bg-yellow-100 border border-yellow-300 rounded\">Generated Component: feature_list (Variable: {param})</div>",
+    "required_params": [
+        "param"
+    ],
+    "description": "Fallback LLM generated component for feature_list."
+}
