@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AI Builder - Token Efficiency Dashboard</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 p-8 font-sans text-gray-800">
+    <div class="max-w-3xl mx-auto bg-white rounded-xl shadow-lg p-6">
+        <h1 class="text-3xl font-bold mb-2">🚀 AI Builder Telemetry Dashboard</h1>
+        <p class="text-gray-500 mb-6">Current Phase: <span class="font-semibold text-blue-600">Alpha</span></p>
+        
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-8">
+            <div class="bg-blue-50 p-4 rounded-lg border border-blue-100 text-center">
+                <div class="text-sm text-blue-500 font-bold uppercase tracking-wide">Total Components</div>
+                <div class="text-4xl font-extrabold text-blue-700 mt-2">8</div>
+            </div>
+            <div class="bg-green-50 p-4 rounded-lg border border-green-100 text-center">
+                <div class="text-sm text-green-500 font-bold uppercase tracking-wide">Cache Hits (Tokens Saved)</div>
+                <div class="text-4xl font-extrabold text-green-700 mt-2">7</div>
+            </div>
+            <div class="bg-yellow-50 p-4 rounded-lg border border-yellow-100 text-center">
+                <div class="text-sm text-yellow-500 font-bold uppercase tracking-wide">LLM Generations</div>
+                <div class="text-4xl font-extrabold text-yellow-700 mt-2">1</div>
+            </div>
+        </div>
+
+        <div class="mb-4">
+            <h2 class="text-xl font-bold mb-2">Token Savings Efficiency</h2>
+            <div class="w-full bg-gray-200 rounded-full h-6 overflow-hidden">
+                <div class="bg-gradient-to-r from-green-400 to-green-600 h-6 text-xs font-bold text-white text-center p-1 leading-none transition-all duration-1000" style="width: 87.5%">
+                    87.5% Cached
+                </div>
+            </div>
+            <p class="text-sm text-gray-500 mt-2">Target savings rate: >50% (GSD Standard)</p>
+        </div>
+        
+        <div class="mt-8 text-sm text-gray-400 border-t pt-4">
+            * Dashboard updated automatically by Orchestrator.
+        </div>
+    </div>
+</body>
+</html>
