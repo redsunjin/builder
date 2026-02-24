@@ -1,0 +1,27 @@
+{
+    "CustomerToComposition": {
+        "type": "object",
+        "description": "Standard output format from Customer Agent representing required UI components",
+        "properties": {
+            "session_id": {
+                "type": "string"
+            },
+            "required_components": {
+                "type": "array",
+                "items": {
+                    "type": "string",
+                    "description": "Component identifier (e.g., 'button', 'text_input')"
+                }
+            },
+            "user_intent": {
+                "type": "string",
+                "description": "Brief description of the overall page purpose"
+            }
+        },
+        "required": [
+            "session_id",
+            "required_components",
+            "user_intent"
+        ]
+    }
+}

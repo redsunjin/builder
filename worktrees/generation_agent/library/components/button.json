@@ -1,0 +1,9 @@
+{
+    "type": "component",
+    "name": "button",
+    "html_template": "<button class=\"px-4 py-2 bg-blue-500 text-white rounded hover:bg-blue-600 transition duration-300\">{text}</button>",
+    "required_params": [
+        "text"
+    ],
+    "description": "A standard primary action button."
+}
