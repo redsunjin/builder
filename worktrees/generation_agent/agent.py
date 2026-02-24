@@ -1,5 +1,20 @@
 import json
 import os
+import sys
+
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+
+from src.utils.llm_router import get_llm
+
+try:
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.output_parsers import JsonOutputParser
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
+
 
 class GenerationAgent:
     """
@@ -9,9 +24,38 @@ class GenerationAgent:
     """
     def __init__(self):
         self.name = "GenerationAgent"
-        # 절대 경로 처리 (orchestrator 실행 기준)
-        base_dir = os.path.dirname(os.path.abspath(__file__))
-        self.library_path = os.path.join(base_dir, "library", "components")
+        base_agent_dir = os.path.dirname(os.path.abspath(__file__))
+        self.library_path = os.path.join(base_agent_dir, "library", "components")
+        os.makedirs(self.library_path, exist_ok=True)
+
+        # 모델은 gpt-4o 권장 (또는 gemini-1.5-pro)
+        self.llm = get_llm(provider="openai", model_name="gpt-4o")
+
+        if LANGCHAIN_AVAILABLE:
+            self.parser = JsonOutputParser()
+            self.prompt = PromptTemplate(
+                template=(
+                    "You are an expert frontend developer.\n"
+                    "Generate a minimal, reusable HTML UI component named '{component_name}' using Tailwind CSS classes.\n"
+                    "Requirements:\n"
+                    "- Do NOT include <html>, <head>, or <body> tags.\n"
+                    "- Output ONLY the component's HTML code.\n"
+                    "- Do NOT include any background colors on the outermost layer of the component so it blends naturally.\n"
+                    "- Use generic placeholders like {{text}} or {{title}} for content that should be dynamic.\n"
+                    "Return the response strictly as a JSON object with this exact format, without any markdown formatting wrappers:\n"
+                    "{{\n"
+                    '  "type": "component",\n'
+                    '  "name": "{component_name}",\n'
+                    '  "html_template": "...",\n'
+                    '  "required_params": ["list of variables like text, title"],\n'
+                    '  "description": "brief explanation"\n'
+                    "}}\n"
+                ),
+                input_variables=["component_name"]
+            )
+            self.chain = self.prompt | self.llm | self.parser
+        else:
+            self.chain = None
 
         # MVP 테스트용 하드코딩된 모의 LLM 응답기
         self._mock_llm_responses = {
@@ -43,8 +87,6 @@ class GenerationAgent:
         # 2. 동적 생성 (Atomic Component) 로직
         print(f"[{self.name}] 🟡 라이브러리 미스: '{component_name}' (LLM 최소 단위 동적 생성 시작)")
         
-        # 실제로는 이곳에서 OpenAI API 등을 호출합니다.
-        # [PROMPT] "UI 컴포넌트 이름 '{component_name}'에 대한 최소 단위의 HTML(Tailwind) 코드와 메타데이터 JSON 포맷을 만들어줘."
         dynamic_component = self._call_llm_for_atomic_component(component_name)
         
         # 3. 라이브러리에 저장 (캐싱)
@@ -55,15 +97,22 @@ class GenerationAgent:
         return dynamic_component
 
     def _call_llm_for_atomic_component(self, name: str) -> dict:
-        """LLM 호출을 모방하는 함수 (MVP 용)"""
+        # 실제 LLM 호출
+        if LANGCHAIN_AVAILABLE and self.chain:
+            try:
+                response = self.chain.invoke({"component_name": name})
+                return response
+            except Exception as e:
+                print(f"[{self.name}] LLM 체인 실패, Fallback 모의 데이터 반환: {e}")
+                
+        # Fallback (전혀 모르는 컴포넌트일 경우 또는 LLM/모의 객체 실패 시)
         if name in self._mock_llm_responses:
             return self._mock_llm_responses[name]
-        
-        # Fallback (전혀 모르는 컴포넌트일 경우)
+            
         return {
             "type": "component",
             "name": name,
-            "html_template": f"<div class=\"p-4 bg-yellow-100 border border-yellow-300\">Generated: {name} ({'{'}param{'}'})</div>",
+            "html_template": f"<div class=\"p-4 bg-yellow-100 border border-yellow-300 rounded\">Generated Component: {name} (Variable: {'{'}param{'}'})</div>",
             "required_params": ["param"],
             "description": f"Fallback LLM generated component for {name}."
         }

@@ -1,5 +1,19 @@
 import json
 import os
+import sys
+
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+if base_dir not in sys.path:
+    sys.path.append(base_dir)
+
+from src.utils.llm_router import get_llm
+
+try:
+    from langchain_core.prompts import PromptTemplate
+    from langchain_core.output_parsers import StrOutputParser
+    LANGCHAIN_AVAILABLE = True
+except ImportError:
+    LANGCHAIN_AVAILABLE = False
 
 class CompositionAgent:
     """
@@ -9,54 +23,98 @@ class CompositionAgent:
     """
     def __init__(self):
         self.name = "CompositionAgent"
+        self.llm = get_llm(provider="openai", model_name="gpt-4o")
+
+        if LANGCHAIN_AVAILABLE:
+            self.parser = StrOutputParser()
+            self.prompt = PromptTemplate(
+                template=(
+                    "You are an expert web layout composer.\n"
+                    "You are given a list of atomic HTML component snippets and the user intent for the overall page.\n"
+                    "Your task is to combine these components into a single, cohesive, responsive HTML document using Tailwind CSS.\n"
+                    "Requirements:\n"
+                    "- Include <!DOCTYPE html>, <html>, <head>, and <body>.\n"
+                    "- Import Tailwind CSS via CDN in the <head>.\n"
+                    "- Prevent CSS conflicts by ensuring proper layout scoping. Add a container wrapper (e.g., max-w-7xl, mx-auto).\n"
+                    "- Structure the layout logically based on the user intent and the types of components given.\n"
+                    "- Substitute generic variables (like {{title}}, {{text}}, {{placeholder}}, {{data_type}}) in the templates with context-appropriate dummy content based on the user intent.\n"
+                    "- Do NOT add any markdown code block syntax (like ```html), output raw HTML directly.\n\n"
+                    "User Intent: {user_intent}\n\n"
+                    "Component Snippets:\n{components}\n\n"
+                    "Output the full RAW HTML:"
+                ),
+                input_variables=["user_intent", "components"]
+            )
+            self.chain = self.prompt | self.llm | self.parser
+        else:
+            self.chain = None
 
     def compose(self, parsed_request: dict, component_assets: list) -> str:
         print(f"[{self.name}] 조립 시작. 대상 컴포넌트 {len(component_assets)}종을 통합합니다.")
         
-        # 1. 문서 기본 스켈레톤 구성 (Tailwind 기반 CSS 스코핑 모의 지원)
+        user_intent = parsed_request.get('user_intent', 'Untitled Project')
+        
+        if LANGCHAIN_AVAILABLE and self.chain:
+            try:
+                # 컴포넌트 명세와 HTML 템플릿 직렬화
+                components_str = ""
+                for asset in component_assets:
+                    components_str += f"--- Component Name: {asset.get('name')} ---\n"
+                    components_str += f"HTML Template: {asset.get('html_template')}\n\n"
+                
+                print(f"[{self.name}] LLM에게 풀 페이지 구성 요청...")
+                response = self.chain.invoke({
+                    "user_intent": user_intent,
+                    "components": components_str
+                })
+                print(f"[{self.name}] 🟢 조립 완료. 최종 디지털 코드 생성 성공.")
+                return response
+            except Exception as e:
+                print(f"[{self.name}] LLM 체인 실패, Fallback 하드코딩 조합 반환: {e}")
+        
+        # Fallback (Langchain 없거나 실패 시)
+        return self._fallback_compose(parsed_request, component_assets)
+
+    def _fallback_compose(self, parsed_request: dict, component_assets: list) -> str:
+        # 기존 뼈대 로직
         final_document = """<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>AI Builder Generated Output</title>
+    <title>AI Builder Generated Output (Fallback)</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <style>
-        /* 글로벌 CSS 충돌 방지용 스코프 및 리셋 (모의) */
         .ai-builder-wrapper { font-family: sans-serif; }
     </style>
 </head>
-<body class="bg-gray-50 flex items-center justify-center min-h-screen">
-    <div class="ai-builder-wrapper bg-white p-6 rounded-lg shadow-xl w-full max-w-2xl flex flex-col gap-4">
+<body class="bg-gray-50 flex items-center justify-center min-h-screen p-4">
+    <div class="ai-builder-wrapper bg-white p-6 rounded-lg shadow-xl w-full max-w-4xl flex flex-col gap-6">
 """
-        # 사용자 요구 목적 명시
         user_intent = parsed_request.get('user_intent', 'Untitled Project')
         final_document += f"\n        <!-- Project Intent: {user_intent} -->\n"
+        final_document += f"        <h1 class='text-2xl font-bold border-b pb-2'>{user_intent}</h1>\n"
         
-        # 2. 파편화된 원자 조각(Atomic Components) 결합
         for asset in component_assets:
-            # LLM 호출 모방: 조각들을 문맥에 맞게 채워 넣음
             rendered_html = self._render_atomic_component(asset)
-            final_document += f"        <!-- Component: {asset['name']} -->\n"
+            final_document += f"        <!-- Component: {asset.get('name')} -->\n"
             final_document += f"        <div class='component-container w-full'>\n"
             final_document += f"            {rendered_html}\n"
             final_document += f"        </div>\n"
             
-        # 3. 문서 닫기
         final_document += """
     </div>
 </body>
 </html>"""
-        print(f"[{self.name}] 🟢 조립 완료. 최종 디지털 코드 생성 성공.")
+        print(f"[{self.name}] (Fallback) 🟢 조립 완료. 최종 디지털 코드 생성 성공.")
         return final_document
 
     def _render_atomic_component(self, asset: dict) -> str:
-        # LLM이 템플릿의 {변수}를 문맥에 맞게 채우는 과정을 시뮬레이션
         html = asset.get('html_template', '')
-        # 아주 단순한 변수 채우기 방식
-        if '{text}' in html: html = html.replace('{text}', 'Submit')
-        if '{title}' in html: html = html.replace('{title}', 'Welcome Dashboard')
-        if '{placeholder}' in html: html = html.replace('{placeholder}', 'Enter your data...')
-        if '{data_type}' in html: html = html.replace('{data_type}', 'Revenue Over Time')
-        
+        # Fallback 용 아주 단순한 변수 채우기 방식 - {text} 든 {{text}} 든 치환
+        html = html.replace('{text}', 'Submit').replace('{{text}}', 'Submit')
+        html = html.replace('{title}', 'Welcome Dashboard').replace('{{title}}', 'Welcome Dashboard')
+        html = html.replace('{placeholder}', 'Enter your data...').replace('{{placeholder}}', 'Enter your data...')
+        html = html.replace('{data_type}', 'Revenue Over Time').replace('{{data_type}}', 'Revenue Over Time')
+        html = html.replace('{param}', 'Dummy Info').replace('{{param}}', 'Dummy Info')
         return html

@@ -1,24 +1,24 @@
 # AI Builder Project 🚀
 
-AI Builder는 비개발자나 기획자 등 누구나 자연어 요구사항만 입력하면, **가장 빠르고 저렴하게 시안, 디자인 가이드, 앱, AI 스킬 등의 디지털 자산을 자동 생성**해 주는 시스템입니다.
+AI Builder는 프롬프트 한 번으로 모든 코드를 짜내는 마법 같은 도구가 아닙니다. 단일 대규모 AI 모델에게 전체 앱 생성을 맡길 때 발생하는 **막대한 토큰 비용, 환각(Hallucination), 그리고 레이아웃 충돌 문제를 현실적으로 해결하기 위한 'AI 자원 절약형 프레임워크'**입니다.
 
-## 💡 핵심 컨셉 (Core Concept)
+## 💡 핵심 컨셉 (Core Concept: Resource-Efficient Generation)
 
-단일 대규모 AI 모델이 전체 코드를 한 번에 짜게 하는 기존 방식의 한계(높은 토큰 비용, 떨어지는 퀄리티, 레이아웃 충돌)를 극복하기 위해 제안된 **하이브리드 다중 LLM 기반 전문 에이전트 프레임워크**입니다.
+AI의 무분별한 토큰 낭비를 막고 결과물의 신뢰도를 높이기 위해, 대규모 단일 LLM 대신 **역할이 세분화된 하이브리드 다중 LLM 기반 에이전트 프레임워크**를 제안합니다.
 
-1. **대화 최소화 및 정규화:** 사용자의 막연한 요청을 빠르고 저렴한 모델(Ollama 등)을 통해 명확한 부품(Component) 목록으로 파싱합니다.
-2. **사전 컴포넌트 라이브러리 (토큰 최적화):** 이미 만들어진 부품(예: 버튼, 헤더)은 DB(JSON)에서 즉시 가져옵니다. 
-3. **최소 단위 동적 컴포넌트 (Atomic Generation):** 라이브러리에 없는 부품만 고성능 코딩 모델(OpenAI/Gemini)에게 "최소 단위의 HTML/Tailwind 코드 조각"으로 동적 생성시킵니다.
+1. **대화 최소화 및 정규화:** 사용자의 막연한 요청을 빠르고 저렴한 모델(Ollama 등)을 통해 명확한 부품(Component) 목록으로 파싱하여 초기 토큰 소모를 줄입니다.
+2. **사전 컴포넌트 라이브러리 (토큰 극강 최적화):** 이미 만들어진 부품(예: 버튼, 헤더)은 AI에게 새로 짜게 하지 않고 DB(JSON)에서 즉시 가져옵니다. 
+3. **최소 단위 동적 컴포넌트 (Atomic Generation):** 라이브러리에 없는 부품만 고성능 코딩 모델(OpenAI/Gemini)에게 "최소 단위의 HTML/Tailwind 코드 조각"으로만 렌더링하도록 강제시켜 AI 자원을 아낍니다.
 4. **조립 및 결합 (Composition):** 위의 파편화된 원자 단위의 코드 조각들을, CSS 스코핑 충돌 없이 매끄러운 단일 결과물로 결합합니다.
 
 ## 🏗️ 아키텍처 및 프레임워크 (Framework Architecture)
 
-본 프로젝트는 영국 GDS(Government Digital Service) 생애주기 관리 방법론과 강력한 에이전트 병렬화(Worktree) 방식을 차용하여 개발되었습니다.
+본 프로젝트는 에이전트 병렬화(Worktree) 환경과 함께, 바이브코딩(Vibe Coding)의 **GSD(Get Stuff Done) 생애주기 관리 방법론**을 차용하여 개발되었습니다. 특히 AI 1인 개발/에이전트 협업 환경에서 컨텍스트 부패를 방지하고 실행 신뢰도를 극대화하는 GSD 철학을 오케스트레이터에 녹여냈습니다.
 
 *   `worktrees/customer_agent`: 사용자 인터페이스 및 요구사항 JSON 파싱 전담
-*   `worktrees/generation_agent`: 컴포넌트 정보(캐시) 로드 및 동적 생성 전담
+*   `worktrees/generation_agent`: 컴포넌트 정보(캐시) 로드 및 동적 생성 전담 (자원 절약의 핵심)
 *   `worktrees/composition_agent`: 여러 컴포넌트 레이아웃 결합 전담
-*   `orchestrator.py`: 각 GDS Phase(Alpha/Beta)의 목표 통과(Gate) 기준을 통제하는 메인 파이프라인
+*   `orchestrator.py`: GSD 기반(컨텍스트 유지, 실행 신뢰도 확보) 에이전트 파이프라인 제어기
 *   `utils/llm_router.py`: 역할과 비용에 따른 다중 LLM(OpenAI, Google, Ollama) 라우터 (예정)
 
 ## 📍 진행 상태 (Roadmap & Status)
