@@ -1,0 +1,9 @@
+{
+  "type": "component",
+  "name": "footer_simple",
+  "html_template": "<div class=\"p-4 bg-yellow-100 border border-yellow-300 rounded\">Generated Component: footer_simple (Variable: {param})</div>",
+  "required_params": [
+    "param"
+  ],
+  "description": "Fallback LLM generated component for footer_simple."
+}
