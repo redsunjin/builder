@@ -1,0 +1,9 @@
+{
+  "type": "component",
+  "name": "custom_graph",
+  "html_template": "<div class=\"w-full h-32 bg-gray-200 border-2 border-dashed border-gray-400 flex items-center justify-center\"><span class=\"text-gray-500\">Dynamic Graph Area for {data_type}</span></div>",
+  "required_params": [
+    "data_type"
+  ],
+  "description": "A dynamically generated atomic graph placeholder."
+}
