@@ -24,8 +24,8 @@ class GenerationAgent:
     """
     def __init__(self):
         self.name = "GenerationAgent"
-        base_agent_dir = os.path.dirname(os.path.abspath(__file__))
-        self.library_path = os.path.join(base_agent_dir, "library", "components")
+        base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
+        self.library_path = os.path.join(base_dir, "output", "components")
         os.makedirs(self.library_path, exist_ok=True)
 
         # 모델은 gpt-4o 권장 (또는 gemini-1.5-pro)

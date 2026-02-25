@@ -15,11 +15,13 @@ AI의 무분별한 토큰 낭비를 막고 결과물의 신뢰도를 높이기 �
 
 본 프로젝트는 에이전트 병렬화(Worktree) 환경과 함께, 바이브코딩(Vibe Coding)의 **GSD(Get Stuff Done) 생애주기 관리 방법론**을 차용하여 개발되었습니다. 특히 AI 1인 개발/에이전트 협업 환경에서 컨텍스트 부패를 방지하고 실행 신뢰도를 극대화하는 GSD 철학을 오케스트레이터에 녹여냈습니다.
 
-*   `worktrees/customer_agent`: 사용자 인터페이스 및 요구사항 JSON 파싱 전담
-*   `worktrees/generation_agent`: 컴포넌트 정보(캐시) 로드 및 동적 생성 전담 (자원 절약의 핵심)
-*   `worktrees/composition_agent`: 여러 컴포넌트 레이아웃 결합 전담
-*   `orchestrator.py`: GSD 기반(컨텍스트 유지, 실행 신뢰도 확보) 에이전트 파이프라인 제어기
-*   `utils/llm_router.py`: 역할과 비용에 따른 다중 LLM(OpenAI, Google, Ollama) 라우터 (예정)
+*   `agents/customer_agent`: 사용자 인터페이스 및 요구사항 JSON 파싱 전담
+*   `agents/generation_agent`: 컴포넌트 메타(캐시) 로드 및 동적 생성 전담 (자원 절약의 핵심)
+*   `agents/composition_agent`: 여러 컴포넌트 레이아웃 결합 전담
+*   `core/orchestrator.py`: GSD 기반(컨텍스트 유지, 실행 신뢰도 확보) 및 Git Worktree 병렬 에이전트 파이프라인 제어기
+*   `src/utils/llm_router.py`: 역할과 비용에 따른 다중 LLM(OpenAI, Google, Ollama) 라우터
+*   `web/app.py`: 웹 서버 구동 컴포넌트 (Flask)
+*   `output/`: 생성된 컴포넌트 JSON 캐시 및 최종 HTML 결과물 저장소
 
 ## 📍 진행 상태 (Roadmap & Status)
 

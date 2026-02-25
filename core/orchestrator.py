@@ -3,8 +3,10 @@ import os
 import sys
 import concurrent.futures
 
-# 병렬 개발 디렉토리 경로 추가
-sys.path.append(os.path.join(os.path.dirname(__file__), 'worktrees'))
+# 루트 디렉토리 및 agents 디렉토리 경로 추가
+base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+sys.path.append(base_dir)
+sys.path.append(os.path.join(base_dir, 'agents'))
 
 from customer_agent.agent import CustomerAgent
 from generation_agent.agent import GenerationAgent
@@ -30,7 +32,10 @@ class Telemetry:
         if self.total_requested == 0: return 0.0
         return (self.cache_hits / self.total_requested) * 100
 
-    def generate_dashboard_html(self, phase, output_path="dashboard.html"):
+    def generate_dashboard_html(self, phase, output_path=None):
+        if output_path is None:
+            output_path = os.path.join(os.path.dirname(__file__), '..', 'output', 'dashboard.html')
+            
         efficiency = self.get_efficiency_rate()
         html_content = f"""<!DOCTYPE html>
 <html lang="en">
@@ -85,7 +90,10 @@ class Orchestrator:
     생애주기 오케스트레이터: GDS 단계에 따라 에이전트들의 실행 파이프라인 제어
     이번 테스트: 동적 컴포넌트(custom_graph, text_input 등) 생성 및 통합 로직
     """
-    def __init__(self, config_path="lifecycle_config.json"):
+    def __init__(self, config_path=None):
+        if config_path is None:
+            config_path = os.path.join(os.path.dirname(__file__), '..', 'config', 'lifecycle_config.json')
+            
         with open(config_path, 'r', encoding='utf-8') as f:
             self.config = json.load(f)
             
@@ -97,11 +105,11 @@ class Orchestrator:
         self.composer = CompositionAgent()
         
         self.telemetry = Telemetry()
-        self.git_manager = GitManager(os.path.dirname(__file__))
+        self.git_manager = GitManager(os.path.join(os.path.dirname(__file__), '..'))
 
     def _generate_component_worker(self, comp: str):
         branch_name = f"feat/{comp}_gen"
-        worktree_path = os.path.join(os.path.dirname(__file__), 'worktrees', f"temp_{comp}")
+        worktree_path = os.path.join(os.path.dirname(__file__), '..', 'worktrees', f"temp_{comp}")
         
         # 1. 워크트리 생성
         try:
@@ -182,7 +190,7 @@ class Orchestrator:
         final_code = self.composer.compose(parsed_data, library_assets)
         
         # 결과물 저장
-        output_file = "builder_output.html"
+        output_file = os.path.join(os.path.dirname(__file__), '..', 'output', 'builder_output.html')
         with open(output_file, 'w', encoding='utf-8') as f:
             f.write(final_code)
             
