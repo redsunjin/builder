@@ -1,6 +1,7 @@
 import json
 import os
 import sys
+import concurrent.futures
 
 # 병렬 개발 디렉토리 경로 추가
 sys.path.append(os.path.join(os.path.dirname(__file__), 'worktrees'))
@@ -8,6 +9,7 @@ sys.path.append(os.path.join(os.path.dirname(__file__), 'worktrees'))
 from customer_agent.agent import CustomerAgent
 from generation_agent.agent import GenerationAgent
 from composition_agent.agent import CompositionAgent
+from scripts.git_manager import GitManager
 
 class Telemetry:
     """GSD 체계 하에서 컴포넌트 처리 효율성(토큰 절감)을 기록하는 모듈"""
@@ -95,6 +97,36 @@ class Orchestrator:
         self.composer = CompositionAgent()
         
         self.telemetry = Telemetry()
+        self.git_manager = GitManager(os.path.dirname(__file__))
+
+    def _generate_component_worker(self, comp: str):
+        branch_name = f"feat/{comp}_gen"
+        worktree_path = os.path.join(os.path.dirname(__file__), 'worktrees', f"temp_{comp}")
+        
+        # 1. 워크트리 생성
+        try:
+            self.git_manager.add_worktree(branch_name, worktree_path)
+        except Exception as e:
+            pass # ignore if already exists/fails
+            
+        # 2. GenerationAgent 연산 수행
+        file_path = os.path.join(self.generator.library_path, f"{comp}.json")
+        is_hit = os.path.exists(file_path)
+        
+        meta = self.generator.load_component_metadata(comp)
+        
+        # 3. 워크트리 내에 파일 저장 및 커밋
+        if os.path.exists(worktree_path):
+            comp_file = os.path.join(worktree_path, f"{comp}.json")
+            with open(comp_file, 'w', encoding='utf-8') as f:
+                json.dump(meta, f, ensure_ascii=False, indent=2)
+                
+            try:
+                self.git_manager.commit_changes(worktree_path, f"Generation Agent: Created {comp}")
+            except Exception:
+                pass # 아무 변경사항 없음
+                
+        return comp, meta, is_hit, branch_name, worktree_path
 
     def run_pipeline(self, session_id: str, user_request: str):
         print(f"\n==========================================")
@@ -109,20 +141,44 @@ class Orchestrator:
             print(f"[Error] Alpha 단계 허용 컴포넌트 초과: {len(components_needed)}")
             return None
 
-        # 2. Generation Agent: 라이브러리 메타데이터 확보 및 없으면 '동적 생성(LLM)'
+        # 2. Generation Agent: 비동기 병렬(Parallel) Worktree 기반 생성
         library_assets = []
-        for comp in components_needed:
-            # Telemetry 추적을 위해 캐시 유무 선별 (GenerationAgent 로직을 살짝 래핑)
-            file_path = os.path.join(self.generator.library_path, f"{comp}.json")
-            if os.path.exists(file_path):
-                self.telemetry.record_hit()
-            else:
-                self.telemetry.record_miss()
-                
-            meta = self.generator.load_component_metadata(comp)
-            library_assets.append(meta)
+        generated_branches = []
+        print(f"\n⚡ [Generation Agent] {len(components_needed)}개 컴포넌트 병렬 생성 시작...")
         
-        # 3. Composition Agent: 원자 조각 통합 조립
+        with concurrent.futures.ThreadPoolExecutor(max_workers=5) as executor:
+            future_to_comp = {executor.submit(self._generate_component_worker, comp): comp for comp in components_needed}
+            for future in concurrent.futures.as_completed(future_to_comp):
+                comp = future_to_comp[future]
+                try:
+                    res_comp, meta, is_hit, branch_name, worktree_path = future.result()
+                    library_assets.append(meta)
+                    generated_branches.append((branch_name, worktree_path))
+                    
+                    if is_hit:
+                        self.telemetry.record_hit()
+                    else:
+                        self.telemetry.record_miss()
+                    print(f"   [+] {comp} 작업 완료 (Cache Hit: {is_hit}) | Branch: {branch_name}")
+                except Exception as exc:
+                    print(f"   [Error] {comp} 작업 중 예외 발생: {exc}")
+
+        # 3. Composition Agent: 원자 조각 통합 조립 (Merge Master 역할 병행)
+        print("\n🔄 [Composition Agent] 병합 조율 시작 (Merge Master)")
+        for branch_name, worktree_path in generated_branches:
+            if branch_name and worktree_path:
+                print(f"   ⮑ Merging {branch_name}...")
+                try:
+                    success, output = self.git_manager.merge_branch(branch_name, allow_unrelated=True)
+                    if not success:
+                        print(f"      [Warning] Merge conflict for {branch_name} - Composition Agent 개입 필요. ({output})")
+                except Exception as e:
+                    print(f"      [Error] 병합 중 에러: {e}")
+                
+                # 병합 완료 후 워크트리 정리
+                self.git_manager.remove_worktree(worktree_path, branch_name)
+        
+        print("\n✨ Final Layout Composition...")
         final_code = self.composer.compose(parsed_data, library_assets)
         
         # 결과물 저장
@@ -131,13 +187,23 @@ class Orchestrator:
             f.write(final_code)
             
         dashboard_file = self.telemetry.generate_dashboard_html(self.phase)
+        efficiency = self.telemetry.get_efficiency_rate()
             
         print(f"\n✅ [결과물 산출 성공] 파일 저장 완료: {output_file}")
         print(f"📊 [지표 업데이트 완료] 대시보드 저장 완료: {dashboard_file}")
-        print(f"   ► 토큰 절감률(Cache Hit): {self.telemetry.get_efficiency_rate():.1f}%")
+        print(f"   ► 토큰 절감률(Cache Hit): {efficiency:.1f}%")
         print("==========================================\n")
         
-        return final_code
+        # API 호환성을 위해 결과 코드와 메타데이터를 함께 딕셔너리로 리턴
+        return {
+            "html": final_code,
+            "metrics": {
+                "total": self.telemetry.total_requested,
+                "hits": self.telemetry.cache_hits,
+                "misses": self.telemetry.llm_generations,
+                "efficiency": round(efficiency, 2)
+            }
+        }
 
 if __name__ == "__main__":
     orchestrator = Orchestrator()
