@@ -49,5 +49,6 @@ def generate_ui():
         return jsonify({"error": str(e)}), 500
 
 if __name__ == '__main__':
-    # 디버그 모드로 5000 포트 구동
-    app.run(host='0.0.0.0', port=5000, debug=True)
+    # 워크트리가 생성/제거될 때 파일 시스템 변경이 감지되어 서버가 재시작되는 현상(watchdog)을 막기 위해 
+    # use_reloader=False 옵션을 추가합니다. (debug=False로 완전 차단)
+    app.run(host='0.0.0.0', port=5000, debug=False, use_reloader=False)

@@ -15,18 +15,31 @@ except ImportError:
 
 load_dotenv()
 
-class MockLLM:
+try:
+    from langchain_core.language_models.fake_chat_models import FakeListChatModel
+except ImportError:
+    FakeListChatModel = object
+
+class MockLLM(FakeListChatModel):
     """API 키가 없거나 Langchain이 없을 때 동작하는 모의 객체"""
-    def __init__(self, provider, model_name):
+    provider: str = "mock"
+    model_name: str = "mock"
+    responses: list = ["Mock response"]
+
+    def __init__(self, provider: str, model_name: str, **kwargs):
+        # 모의 JSON 응답을 반환하도록 설정
+        mock_json_response = '''{
+            "session_id": "mock_session",
+            "required_components": ["header", "button", "text_input", "footer_simple"],
+            "user_intent": "mocked intent from router"
+        }'''
+        super().__init__(responses=[mock_json_response], **kwargs)
         self.provider = provider
         self.model_name = model_name
 
-    def invoke(self, prompt: str) -> Any:
-        class MockResponse:
-            def __init__(self, content):
-                self.content = content
+    def invoke(self, prompt: str, **kwargs) -> Any:
         print(f"[Mock {self.provider}/{self.model_name}] LLM 호출 모방")
-        return MockResponse(f"Mock response from {self.provider} {self.model_name} for: {prompt[:30]}...")
+        return super().invoke(prompt, **kwargs)
 
 def get_llm(provider: str = "ollama", model_name: str = "llama3") -> BaseChatModel:
     """
