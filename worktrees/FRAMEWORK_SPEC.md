@@ -1,52 +1,42 @@
-# AI Builder Worktree Framework Specification
+# Git Worktree Multi-Agent Framework Specification
 
 ## 1. 프레임워크 개요 (Framework Overview)
-이 스펙 문서는 AI Builder 프로젝트의 프로덕트(UI 컴포넌트 조립)를 넘어서, **AI 기반 에이전트들이 Git Worktree를 활용하여 어떻게 안전하고 격리된 환경에서 협업(개발)해야 하는지**에 대한 기술적 정의서입니다. 
-GSD(Get Stuff Done) 철학에 따라, 단일 AI 모델의 맥락 오염(Context Rot)을 막고 다수 에이전트의 책임을 분리하는 것이 핵심입니다.
+이 스펙 문서는 특정 프로덕트에 종속되지 않는 범용적인 **'Git Worktree 기반 가상 AI 개발팀(Multi-Agent)' 운영 체계**를 정의합니다.
+핵심 목적은 단일 AI 모델에게 전체 프로젝트를 위임했을 때 발생하는 **컨텍스트 오염(Context Rot)과 할루시네이션을 방지**하고, 격리된 병렬 환경에서 다수의 에이전트가 각자의 역할만(Atomic Task) 수행 후 조립되도록 통제하는 것입니다.
 
-## 2. 에이전트 구성 및 역할 (Agent Roles)
+## 2. 가상 에이전트 구성 (Agent Roles)
+본 프레임워크는 소프트웨어 개발론(기획 -> 개발 -> QA -> 배포)의 라이프사이클을 가상의 에이전트 역할로 분리합니다.
 
-### 2.1 Customer Agent (분석가/파서)
-*   **실행 위치:** 메인 브랜치 (`main`)
-*   **Input:** 사용자의 자연어 요청 (예: "대시보드 페이지와 로그인 폼 만들어줘")
-*   **Output:** 필수 컴포넌트 목록과 세션 ID가 포함된 정규화된 JSON 포맷 (`interfaces/agent_interfaces.json` 참고)
-*   **제약사항:** 코드(HTML/CSS) 생성에 관여하지 않으며, 오직 "어떤 부품이 필요한가"만 결정합니다.
+### 2.1 Planning Agent (기획/분석)
+*   **실행 위치:** 메인 작업선 (`main`)
+*   **역할:** 파편화된 사용자의 자연어 요구사항을 분석하여, 시스템이 파싱하고 분배할 수 있는 '구조화된 명세(JSON 등)' 단위 모델로 쪼갭니다.
+*   **제약:** 이 에이전트는 절대 코드를 직접 생성하거나 수정하지 않습니다. 오직 '작업 목록 명세'만을 산출합니다.
 
-### 2.2 Methodology / QA Agent (아키텍트/테스터)
-*   **실행 위치:** 파이프라인 전반 감시 및 격리된 워크트리 검수
-*   **Input:** `Generation Agent` 가 생성한 컴포넌트 데이터 조각
-*   **Output:** `Pass` / `Fail` 상태 리포트 및 반려(Reject)
-*   **검증 규칙 (Rule-based QA):**
-    *   **GSD Rule 1:** 산출물은 `<html>`, `<body>`, `<head>` 등의 전체 문서 구조를 포함해서는 안 됨 (컴포넌트 단위 강제).
-    *   **GSD Rule 2:** 생성된 코드가 사전 정의된 JSON 구조(메타데이터, html 텍스트 등)를 만족해야 함.
-*   **제약사항:** 직접 코드를 수정하지 않으며, 실패 시 해당 임시 브랜치 및 워크트리의 통째 삭제(Drop)를 오케스트레이터에 지시합니다.
+### 2.2 Methodology / QA Agent (팀 매니저/테스터)
+*   **실행 위치:** 전체 파이프라인의 오케스트레이션 단계에서 개입
+*   **역할:** 개발 에이전트들이 생성한 산출물이 '프레임워크의 대원칙(예: 파일 최소 단위 유지, 필수 태그 포함 여부 등)'을 지켰는지 **정적 검사(QA)**를 수행합니다.
+*   **제약:** 검사에서 룰을 위반(Fail)한 워크트리는 병합 전 단계에서 통째로 파기(Reject)시킴으로써 오염된 코드가 본선(`main`)에 진입하는 것을 차단합니다.
 
 ### 2.3 Generation Agent (분산 AI 코더)
-*   **실행 위치:** `worktrees/temp_<component_name>` (격리된 임시 폴더 및 브랜치)
-*   **Input:** Customer Agent가 도출한 '단일' 컴포넌트 이름 (목표 단위)
-*   **Output:** 컴포넌트 구조를 담은 `.json` 파일
-*   **비용 절감 전략:** 생성 전 `output/components/` (혹은 라이브러리 캐시)를 조회하여 기존 파일이 존재하면 LLM을 호출하지 않고 캐시를 반환합니다 (Hit).
-*   **제약사항:** 한 번에 오직 하나의 컴포넌트에 대해서만 코드를 생성해야 합니다 (Atomic Execution). 
+*   **실행 위치:** `worktrees/temp_<task_name>` (격리된 임시 폴더 및 단일 브랜치)
+*   **역할:** Planning Agent가 도출한 아주 작은 개별 단위 작업(Atomic Task) 1개만을 할당받아, 오직 해당 요소만을 코딩하고 로컬 브랜치에 커밋(`git commit`)합니다.
+*   **제약:** 전체 프로젝트의 맥락(Context)을 주입받지 않으며, 매 실행마다 휘발성으로 1개의 작업만 수행하고 제거됨으로써 컨텍스트 신선도를 유지합니다.
 
-### 2.4 Composition Agent (조립/퍼블리셔)
-*   **실행 위치:** 메인 브랜치 병합 단계
-*   **Input:** Methodology QA를 통과한 다수의 컴포넌트 브랜치들 및 메타데이터
-*   **Output:** 병합 충돌 해결 및 최종 조립된 `output/builder_output.html`
-*   **제약사항:** 템플릿의 전체적인 레이아웃(Grid, Flex 등)에만 개입하며 개별 컴포넌트의 내부 디자인 로직은 건드리지 않습니다.
+### 2.4 Composition Agent (아키텍트/병합 관리자)
+*   **실행 위치:** 메인 작업선 병합 단계
+*   **역할:** QA 검증을 통과한 수많은 격리 브랜치들의 코드 조각들을 하나로 합쳐 작동을 검증하고, 최종 애플리케이션 프레임워크에 배치합니다.
 
-## 3. 오케스트레이션 및 라이프사이클 (Orchestration Pipeline)
-`core/orchestrator.py` 가 `git_manager.py`를 활용하여 다음 라이프사이클을 자동 통제해야 합니다.
+## 3. 오케스트레이션 파이프라인 (Git-driven Pipeline)
+오케스트레이터 모듈(예: `core/orchestrator.py`)은 하위 `git_manager`를 통해 아래의 라이프사이클을 강제합니다.
 
-1.  **Job Parsing:** `Customer Agent` 가 타겟 컴포넌트 리스트 도출.
-2.  **Thread Allocation (분산 할당):** `ThreadPoolExecutor` 를 통해 타겟 별로 독립된 워크트리(`feat/X_gen`) 생성.
-3.  **Atomic Generation:** 각 스레드에서 `Generation Agent`가 LLM 호출 및 파일 쓰기.
-4.  **Local Commit:** 워크트리 내부에서 `git commit` 수행.
-5.  **QA Gate (품질 검문):** `Methodology Agent` 가 결과물을 정적 분석.
-6.  **Branch Cleanup (성공/실패 분기):**
-    *   **성공 (Pass):** 임시 브랜치를 `main` 에 `merge` (충돌 무시-허용 옵션) 후 임시 워크트리 폴더 삭제.
-    *   **실패 (Fail):** 해당 임시 브랜치 및 워크트리 즉각 폐기, `Telemetry` 대시보드에 에러 리포트.
-7.  **Final Composition:** 살아남아 병합된 조각들을 모아 `Composition Agent` 가 하나의 템플릿 완성.
+1.  **Job Parsing:** 사용자의 의도를 분석하여 N개의 태스크로 분해.
+2.  **Worktree Allocation (병렬 할당):** 태스크 갯수만큼 메인 브랜치에서 파생된 임시 워크트리(`feat/<task>_gen`) 디렉토리를 물리적으로 N개 생성.
+3.  **Atomic Generation:** 각 스레드 워크트리에 독립된 AI કો더 투입. 컨텍스트 간섭 없이 코드 생성.
+4.  **Local Commit:** 워크트리 내부에서 독립적인 Git 커밋 이력 생성.
+5.  **QA Gate:** 매니저 에이전트가 각 워크트리의 빌드/정적 패턴 검사 수행.
+6.  **Merge & Cleanup:** 검사에 합격한 브랜치들만 메인으로 병합(`git merge`) 후, 임시 워크트리와 브랜치 즉시 삭제.
 
-## 4. 확장성 스펙 (Future Portability)
-*   현재 Python 로컬 `subprocess` 기반의 Git 호출을 장기적으로 Github Actions 환경 혹은 별도 컨테이너 클러스터(Kubernetes) 기반의 MSA 구조로 분리할 수 있도록 설계합니다.
-*   다양한 LLM (OpenAI, Gemini, Ollama) 을 교체할 수 있도록 `Generation Agent` 의 호출부는 반드시 `llm_router.py` 인터페이스만을 통과해야 합니다.
+## 4. 프레임워크 확장성 (Portability)
+이 방법론은 특정 언어나 웹 프레임워크에 국한되지 않습니다.
+*   에이전트에게 공급하는 시스템 프롬프트를 교체하면 (UI 컴포넌트 생성 -> API 엔드포인트 생성 -> 데이터 분석 스크립트 등) **다양한 종류의 소프트웨어 협업 엔진으로 즉시 전용** 가능합니다.
+*   단일 머신의 서브프로세스뿐만 아니라 CI/CD 파이프라인의 분산 노드(Docker 컨테이너) 환경으로의 스케일 아웃(Scale-out)으로 발전 가능합니다.

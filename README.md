@@ -4,6 +4,11 @@ AI Builder는 프롬프트 한 번으로 모든 코드를 짜내는 마법 같�
 
 ## 💡 핵심 컨셉 (Core Concept: Resource-Efficient Generation)
 
+이 프로젝트가 시장에 내놓고자 하는 "UI 조립형 목업 생성기" 프로덕트(AI Builder)에 대한 구체적인 기능 정의 및 향후 비즈니스 로드맵은 다음 코어 문서를 참고하시기 바랍니다.
+
+*   **[🎯 프로덕트 스펙 (BUILDER_SPEC.md)](./docs/BUILDER_SPEC.md)**
+*   **[🛣️ 프로덕트 로드맵 (BUILDER_ROADMAP.md)](./docs/BUILDER_ROADMAP.md)**
+
 AI의 무분별한 토큰 낭비를 막고 결과물의 신뢰도를 높이기 위해, 대규모 단일 LLM 대신 **역할이 세분화된 하이브리드 다중 LLM 기반 에이전트 프레임워크**를 제안합니다.
 
 1. **대화 최소화 및 정규화:** 사용자의 막연한 요청을 빠르고 저렴한 모델(Ollama 등)을 통해 명확한 부품(Component) 목록으로 파싱하여 초기 토큰 소모를 줄입니다.
