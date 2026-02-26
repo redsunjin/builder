@@ -3,14 +3,13 @@ import os
 import sys
 import concurrent.futures
 
-# 루트 디렉토리 및 agents 디렉토리 경로 추가
-base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
-sys.path.append(base_dir)
-sys.path.append(os.path.join(base_dir, 'agents'))
+# 프로젝트 루트(core의 상위)를 sys.path에 추가하여 worktrees 내부의 모듈을 absolute path처럼 참조 가능하게 함
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), '..')))
 
-from customer_agent.agent import CustomerAgent
-from generation_agent.agent import GenerationAgent
-from composition_agent.agent import CompositionAgent
+from worktrees.customer_agent.agent import CustomerAgent
+from worktrees.generation_agent.agent import GenerationAgent
+from worktrees.composition_agent.agent import CompositionAgent
+from worktrees.methodology_agent.agent import MethodologyAgent
 from scripts.git_manager import GitManager
 
 class Telemetry:
@@ -103,6 +102,7 @@ class Orchestrator:
         self.customer = CustomerAgent()
         self.generator = GenerationAgent()
         self.composer = CompositionAgent()
+        self.methodology = MethodologyAgent()
         
         self.telemetry = Telemetry()
         self.git_manager = GitManager(os.path.join(os.path.dirname(__file__), '..'))
@@ -160,6 +160,16 @@ class Orchestrator:
                 comp = future_to_comp[future]
                 try:
                     res_comp, meta, is_hit, branch_name, worktree_path = future.result()
+                    
+                    # [Methodology Agent Interception] QA Verification
+                    print(f"   [!] Methodology Agent inspecting {comp}...")
+                    qa_result = self.methodology.process(meta)
+                    if qa_result.get("status") == "failed":
+                        print(f"   [Error] {comp} QA Failed: {qa_result.get('reason')}. Skipping merge.")
+                        # Remove worktree immediately to reject bad component
+                        self.git_manager.remove_worktree(worktree_path, branch_name)
+                        continue
+                        
                     library_assets.append(meta)
                     generated_branches.append((branch_name, worktree_path))
                     
@@ -167,7 +177,7 @@ class Orchestrator:
                         self.telemetry.record_hit()
                     else:
                         self.telemetry.record_miss()
-                    print(f"   [+] {comp} 작업 완료 (Cache Hit: {is_hit}) | Branch: {branch_name}")
+                    print(f"   [+] {comp} 작업 완료 및 QA 통과 (Cache Hit: {is_hit}) | Branch: {branch_name}")
                 except Exception as exc:
                     print(f"   [Error] {comp} 작업 중 예외 발생: {exc}")
 

@@ -1,0 +1,130 @@
+commit d4aac7aae7e1d49786508a3e8dceed69f71d8afb
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 19:58:49 2026 +0900
+
+    docs: Update README.md and reorganize project directory structure
+
+M	README.md
+R100	worktrees/composition_agent/__pycache__/agent.cpython-313.pyc	agents/composition_agent/__pycache__/agent.cpython-313.pyc
+R100	worktrees/composition_agent/agent.py	agents/composition_agent/agent.py
+R100	worktrees/customer_agent/__pycache__/agent.cpython-313.pyc	agents/customer_agent/__pycache__/agent.cpython-313.pyc
+R100	worktrees/customer_agent/agent.py	agents/customer_agent/agent.py
+R066	worktrees/generation_agent/__pycache__/agent.cpython-313.pyc	agents/generation_agent/__pycache__/agent.cpython-313.pyc
+R097	worktrees/generation_agent/agent.py	agents/generation_agent/agent.py
+R100	worktrees/generation_agent/library/components/alert_banner.json	agents/generation_agent/library/components/alert_banner.json
+R100	worktrees/generation_agent/library/components/button.json	agents/generation_agent/library/components/button.json
+R100	worktrees/generation_agent/library/components/custom_graph.json	agents/generation_agent/library/components/custom_graph.json
+R100	worktrees/generation_agent/library/components/faq_accordion.json	agents/generation_agent/library/components/faq_accordion.json
+R100	worktrees/generation_agent/library/components/feature_list.json	agents/generation_agent/library/components/feature_list.json
+R100	worktrees/generation_agent/library/components/footer_simple.json	agents/generation_agent/library/components/footer_simple.json
+R100	worktrees/generation_agent/library/components/header.json	agents/generation_agent/library/components/header.json
+R100	worktrees/generation_agent/library/components/hero_section.json	agents/generation_agent/library/components/hero_section.json
+R100	worktrees/generation_agent/library/components/login_form.json	agents/generation_agent/library/components/login_form.json
+R100	worktrees/generation_agent/library/components/modal_dialog.json	agents/generation_agent/library/components/modal_dialog.json
+R100	worktrees/generation_agent/library/components/nav_bar.json	agents/generation_agent/library/components/nav_bar.json
+R100	worktrees/generation_agent/library/components/pricing_table.json	agents/generation_agent/library/components/pricing_table.json
+R100	worktrees/generation_agent/library/components/testimonial_card.json	agents/generation_agent/library/components/testimonial_card.json
+R100	worktrees/generation_agent/library/components/text_input.json	agents/generation_agent/library/components/text_input.json
+R100	worktrees/generation_agent/library/components/unknown_dynamic_widget.json	agents/generation_agent/library/components/unknown_dynamic_widget.json
+R100	interfaces/agent_interfaces.json	config/agent_interfaces.json
+R100	lifecycle_config.json	config/lifecycle_config.json
+R092	orchestrator.py	core/orchestrator.py
+R100	GSD.md	docs/GSD.md
+R100	"\354\203\235\354\204\261\355\230\225 AI \352\270\260\353\260\230 \353\271\214\353\215\224 \354\213\234\354\212\244\355\205\234 \352\270\260\355\232\215 \354\240\225\353\246\254.md"	"docs/\354\203\235\354\204\261\355\230\225 AI \352\270\260\353\260\230 \353\271\214\353\215\224 \354\213\234\354\212\244\355\205\234 \352\270\260\355\232\215 \354\240\225\353\246\254.md"
+R100	"\354\240\204\353\254\270\352\260\200 \352\267\270\353\243\271.md"	"docs/\354\240\204\353\254\270\352\260\200 \352\267\270\353\243\271.md"
+R090	builder_output.html	output/builder_output.html
+R100	button.json	output/button.json
+A	output/components/button.json
+A	output/components/custom_graph.json
+A	output/components/footer_simple.json
+A	output/components/header.json
+A	output/components/hero_section.json
+A	output/components/nav_bar.json
+A	output/components/text_input.json
+A	output/components/unknown_dynamic_widget.json
+R100	custom_graph.json	output/custom_graph.json
+R094	dashboard.html	output/dashboard.html
+R100	footer_simple.json	output/footer_simple.json
+R100	header.json	output/header.json
+R100	hero_section.json	output/hero_section.json
+R100	nav_bar.json	output/nav_bar.json
+R100	text_input.json	output/text_input.json
+R100	unknown_dynamic_widget.json	output/unknown_dynamic_widget.json
+A	run_server.py
+R092	app.py	web/app.py
+R100	templates/index.html	web/templates/index.html
+A	worktrees/temp_hero_section/worktrees/generation_agent/library/components/header.json
+
+commit 6ba4e024bfe1a6810f408b35c8440ed489e4c230
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:12:36 2026 +0900
+
+    feat: Introduce Git Worktree-based parallel execution for orchestrated agents
+
+M	README.md
+A	__pycache__/orchestrator.cpython-313.pyc
+A	app.py
+M	builder_output.html
+M	dashboard.html
+M	orchestrator.py
+A	requirements.txt
+A	scripts/__pycache__/git_manager.cpython-313.pyc
+A	scripts/git_manager.py
+A	templates/index.html
+
+commit 062ceb45958148e47aead4e1f24db110cef742da
+Merge: 19d06b9 7bca424
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:31 2026 +0900
+
+    Merge feat/unknown_dynamic_widget_gen into main
+
+commit 19d06b9fbd26dba0ddffa043c58d268bc8e5bd34
+Merge: a288049 34abf3b
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:31 2026 +0900
+
+    Merge feat/footer_simple_gen into main
+
+commit a28804904bcaf01f7af5db19580a2079ab61ff3b
+Merge: 4ffc378 2f1cb81
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:30 2026 +0900
+
+    Merge feat/button_gen into main
+
+commit 4ffc378caa690413bfb245fdd9a402d2797a0e5e
+Merge: e0251ae 1ac3fb2
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:28 2026 +0900
+
+    Merge feat/nav_bar_gen into main
+
+commit e0251aefe4b62272f47a3c2051e18e377bdffa3f
+Merge: 61bad74 f8a6939
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:26 2026 +0900
+
+    Merge feat/custom_graph_gen into main
+
+commit 61bad7479eb8217893e11f5be43340cdcbce4d67
+Merge: 02f12be 1e0c9ec
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:25 2026 +0900
+
+    Merge feat/text_input_gen into main
+
+commit 02f12bea89823747bab978e00a5993c867d1f5d1
+Merge: 274e19e f4bf226
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:25 2026 +0900
+
+    Merge feat/hero_section_gen into main
+
+commit 7bca4243efe01aac305fd2fcbf1a84d9f8bd0101
+Author: jo sunjin <redsunjin@gmail.com>
+Date:   Wed Feb 25 18:00:24 2026 +0900
+
+    Generation Agent: Created unknown_dynamic_widget
+
+A	unknown_dynamic_widget.json
