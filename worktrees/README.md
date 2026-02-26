@@ -2,7 +2,10 @@
 
 이 문서는 AI Builder 프로젝트 자체를 개발/고도화하기 위한 **멀티-에이전트 시스템 구조 및 Git Worktree 기반 개발 방법론** 가이드입니다. 
 
-AI Builder 프로덕트에 대한 전반적인 소개는 [Root README.md](../README.md)를 참고하세요.
+## 📚 코어 문서 (Core Documentation)
+
+*   **[🎯 프레임워크 스펙 (FRAMEWORK_SPEC.md)](./FRAMEWORK_SPEC.md):** 다중 에이전트의 역할과 병렬 라이프사이클의 기술적/구조적 제약사항 명세서입니다.
+*   **[🛣️ 개발 로드맵 (DEVELOPMENT_ROADMAP.md)](./DEVELOPMENT_ROADMAP.md):** 이 워크트리 방법론 자체를 고도화하기 위한 단계별(Phase 1~4) 목표와 타임라인입니다.
 
 ## 👥 팀 빌딩 (The Multi-Agent Team)
 
