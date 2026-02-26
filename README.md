@@ -11,17 +11,19 @@ AI의 무분별한 토큰 낭비를 막고 결과물의 신뢰도를 높이기 �
 3. **최소 단위 동적 컴포넌트 (Atomic Generation):** 라이브러리에 없는 부품만 고성능 코딩 모델(OpenAI/Gemini)에게 "최소 단위의 HTML/Tailwind 코드 조각"으로만 렌더링하도록 강제시켜 AI 자원을 아낍니다.
 4. **조립 및 결합 (Composition):** 위의 파편화된 원자 단위의 코드 조각들을, CSS 스코핑 충돌 없이 매끄러운 단일 결과물로 결합합니다.
 
-## 🏗️ 아키텍처 및 프레임워크 (Framework Architecture)
+## 🏗️ 시스템 아키텍처 및 모듈 구성 (System Architecture)
 
-본 프로젝트는 에이전트 병렬화(Worktree) 환경과 함께, 바이브코딩(Vibe Coding)의 **GSD(Get Stuff Done) 생애주기 관리 방법론**을 차용하여 개발되었습니다. 특히 AI 1인 개발/에이전트 협업 환경에서 컨텍스트 부패를 방지하고 실행 신뢰도를 극대화하는 GSD 철학을 오케스트레이터에 녹여냈습니다.
+본 프로젝트는 AI 자원 절약 및 결과물 정확도를 위해 각각의 역할을 분담하는 파이프라인으로 구성되어 있습니다.
 
-*   `worktrees/customer_agent`: 사용자 인터페이스 및 요구사항 JSON 파싱 전담
-*   `worktrees/generation_agent`: 컴포넌트 메타(캐시) 로드 및 동적 생성 전담 (자원 절약의 핵심)
-*   `worktrees/composition_agent`: 여러 컴포넌트 레이아웃 결합 전담
-*   `core/orchestrator.py`: GSD 기반(컨텍스트 유지, 실행 신뢰도 확보) 및 Git Worktree 병렬 에이전트 파이프라인 제어기
+*   `core/orchestrator.py`: 전체 컴포넌트 생성 및 조립 파이프라인의 핵심 제어기
+*   `config/`: 생애주기 단계 및 에이전트 인터페이스 등 필수 설정 파일
 *   `src/utils/llm_router.py`: 역할과 비용에 따른 다중 LLM(OpenAI, Google, Ollama) 라우터
 *   `web/app.py`: 웹 서버 구동 컴포넌트 (Flask)
-*   `output/`: 생성된 컴포넌트 JSON 캐시 및 최종 HTML 결과물 저장소
+*   `output/`: 생성된 컴포넌트 JSON 캐시 및 최종 조립된 HTML 결과물 저장소
+
+> **⚠️ 개발 방법론 및 팀 빌딩 가이드 (For Developers)**
+> 본 프로젝트의 AI 에이전트들은 안정성 및 품질 관리(QA)를 위해 격리된 **Git Worktree 환경**에서 병렬로 개발을 진행합니다. 
+> 에이전트별 구체적인 역할(Customer, Generation, Composition, QA) 및 'GSD 멀티-에이전트 방법론'에 대한 상세 가이드는 **`worktrees/README.md`** 및 `docs/GSD.md`를 참고해 주세요.
 
 ## 📍 진행 상태 (Roadmap & Status)
 
