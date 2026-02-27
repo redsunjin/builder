@@ -42,3 +42,5 @@ AI의 무분별한 토큰 낭비를 막고 결과물의 신뢰도를 높이기 �
 ---
 
 > 본 README는 AI Builder 초기 뼈대(Alpha Phase) 설정과 Phase Beta(실제 LLM 연동) 계획을 간략하게 요약한 것으로, 개발 및 검증 진행에 따라 지속적으로 업데이트될 예정입니다.
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
+
