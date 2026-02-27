@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Local env / virtualenv
+.env
+.venv/
+
+# Python cache artifacts
+__pycache__/
+.pycache_tmp/
+*.pyc
+*.pyo
+*.pyd
+
+# Runtime-generated artifacts
+output/orchestrator_runs/

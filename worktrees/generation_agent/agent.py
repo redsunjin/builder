@@ -28,8 +28,9 @@ class GenerationAgent:
         self.library_path = os.path.join(base_dir, "output", "components")
         os.makedirs(self.library_path, exist_ok=True)
 
-        # 모델은 gpt-4o 권장 (또는 gemini-1.5-pro)
-        self.llm = get_llm(provider="openai", model_name="gpt-4o")
+        provider = os.getenv("GENERATION_LLM_PROVIDER", os.getenv("AI_PROVIDER", "openai"))
+        model_name = os.getenv("GENERATION_LLM_MODEL", os.getenv("AI_MODEL", "gpt-4o"))
+        self.llm = get_llm(provider=provider, model_name=model_name)
 
         if LANGCHAIN_AVAILABLE:
             self.parser = JsonOutputParser()

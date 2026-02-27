@@ -23,7 +23,9 @@ class CustomerAgent:
     """
     def __init__(self):
         self.name = "CustomerAgent"
-        self.llm = get_llm(provider="ollama", model_name="llama3")
+        provider = os.getenv("CUSTOMER_LLM_PROVIDER", os.getenv("AI_PROVIDER", "ollama"))
+        model_name = os.getenv("CUSTOMER_LLM_MODEL", os.getenv("AI_MODEL", "llama3"))
+        self.llm = get_llm(provider=provider, model_name=model_name)
         
         if LANGCHAIN_AVAILABLE:
             self.parser = JsonOutputParser()

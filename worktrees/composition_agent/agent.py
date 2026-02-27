@@ -23,7 +23,9 @@ class CompositionAgent:
     """
     def __init__(self):
         self.name = "CompositionAgent"
-        self.llm = get_llm(provider="openai", model_name="gpt-4o")
+        provider = os.getenv("COMPOSITION_LLM_PROVIDER", os.getenv("AI_PROVIDER", "openai"))
+        model_name = os.getenv("COMPOSITION_LLM_MODEL", os.getenv("AI_MODEL", "gpt-4o"))
+        self.llm = get_llm(provider=provider, model_name=model_name)
 
         if LANGCHAIN_AVAILABLE:
             self.parser = StrOutputParser()
