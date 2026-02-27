@@ -18,6 +18,10 @@ class GitManager:
         if result.returncode != 0:
             raise RuntimeError(f"Git command failed: {' '.join(cmd)}\nError: {result.stderr}")
         return result.stdout.strip()
+
+    def _worktree_admin_path(self, worktree_path: str) -> str:
+        worktree_name = os.path.basename(os.path.abspath(worktree_path))
+        return os.path.join(self.repo_path, '.git', 'worktrees', worktree_name)
         
     def add_worktree(self, branch_name: str, target_path: str):
         """
@@ -52,9 +56,12 @@ class GitManager:
         # 워크트리 제거
         try:
             self._run_cmd(cmd)
-        except RuntimeError as e:
+        except RuntimeError:
             # 만약 이미 폴더가 지워졌거나 워크트리가 연결 해제되어 에러가 날 경우 무시하거나 prune
-            self._run_cmd(['git', 'worktree', 'prune'])
+            try:
+                self._run_cmd(['git', 'worktree', 'prune', '--expire', 'now'])
+            except RuntimeError:
+                pass
             if os.path.exists(abspath):
                 shutil.rmtree(abspath, ignore_errors=True)
                 
@@ -65,6 +72,17 @@ class GitManager:
                 self._run_cmd(['git', 'branch', '-D', branch_name])
             except RuntimeError:
                 pass
+
+        # 로컬 메타데이터 정리 (반복 호출에도 안전)
+        try:
+            self._run_cmd(['git', 'worktree', 'prune', '--expire', 'now'])
+        except RuntimeError:
+            pass
+
+        # prune 실패 시 남는 메타 디렉토리까지 강제 정리
+        admin_path = self._worktree_admin_path(abspath)
+        if os.path.exists(admin_path):
+            shutil.rmtree(admin_path, ignore_errors=True)
 
     def commit_changes(self, worktree_path: str, message: str, file_patterns: list = ['.']):
         """
@@ -103,6 +121,76 @@ class GitManager:
                  return False, str(e)
             else:
                  raise e
+
+    def _extract_branch_name(self, branch_ref: str):
+        if not branch_ref:
+            return None
+        prefix = "refs/heads/"
+        if branch_ref.startswith(prefix):
+            return branch_ref[len(prefix):]
+        return branch_ref
+
+    def list_worktrees(self) -> list:
+        """
+        현재 저장소의 worktree 목록을 구조화하여 반환합니다.
+        """
+        try:
+            output = self._run_cmd(['git', 'worktree', 'list', '--porcelain'])
+        except RuntimeError:
+            return []
+
+        entries = []
+        current = {}
+        for line in output.splitlines():
+            if not line.strip():
+                if current:
+                    current["branch_name"] = self._extract_branch_name(current.get("branch_ref"))
+                    entries.append(current)
+                    current = {}
+                continue
+
+            if line.startswith("worktree "):
+                current["path"] = line.split(" ", 1)[1].strip()
+            elif line.startswith("branch "):
+                current["branch_ref"] = line.split(" ", 1)[1].strip()
+            elif line.startswith("HEAD "):
+                current["head"] = line.split(" ", 1)[1].strip()
+
+        if current:
+            current["branch_name"] = self._extract_branch_name(current.get("branch_ref"))
+            entries.append(current)
+
+        return entries
+
+    def cleanup_stale_temp_worktrees(self, temp_prefix: str = "worktrees/temp_", keep_paths: list = None) -> list:
+        """
+        temp_prefix 하위의 고아 worktree를 정리합니다.
+        반환값: 실제 정리된 worktree 절대 경로 목록.
+        """
+        keep_set = {os.path.abspath(path) for path in (keep_paths or [])}
+        cleaned = []
+
+        for entry in self.list_worktrees():
+            path = entry.get("path")
+            if not path:
+                continue
+
+            abspath = os.path.abspath(path)
+            if abspath == self.repo_path or abspath in keep_set:
+                continue
+
+            relpath = os.path.relpath(abspath, self.repo_path).replace("\\", "/")
+            if not relpath.startswith(temp_prefix):
+                continue
+
+            try:
+                self.remove_worktree(abspath, branch_name=entry.get("branch_name"), force=True)
+                cleaned.append(abspath)
+            except Exception:
+                # 정리 가능한 항목부터 최대한 진행
+                continue
+
+        return cleaned
 
 # 직접 모듈 테스트 실행용 (필요시)
 if __name__ == '__main__':
