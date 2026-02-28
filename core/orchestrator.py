@@ -124,6 +124,7 @@ class Orchestrator:
             os.getenv("RUNTIME_OUTPUT_DIR", os.path.join(self.repo_root, "output", "runtime"))
         )
         os.makedirs(self.runtime_output_dir, exist_ok=True)
+        self.disable_merge_to_main = self._env_flag("ORCHESTRATOR_DISABLE_MERGE", default=False)
 
         self.telemetry = Telemetry()
         self.git_manager = GitManager(self.repo_root)
@@ -136,6 +137,19 @@ class Orchestrator:
 
         self._register_process_hooks()
         self._run_startup_recovery_once()
+
+    @staticmethod
+    def _env_flag(name: str, default: bool = False) -> bool:
+        raw = os.getenv(name)
+        if raw is None:
+            return default
+
+        normalized = str(raw).strip().lower()
+        if normalized in ("1", "true", "yes", "on"):
+            return True
+        if normalized in ("0", "false", "no", "off"):
+            return False
+        return default
 
     @staticmethod
     def _utcnow_iso() -> str:
@@ -454,6 +468,8 @@ class Orchestrator:
                 f"Methodology={thread_pool['methodology']}, "
                 f"Composition={thread_pool['composition']}"
             )
+            if self.disable_merge_to_main:
+                print("[Safety] ORCHESTRATOR_DISABLE_MERGE=1 -> main 브랜치 병합 비활성화")
 
             with concurrent.futures.ThreadPoolExecutor(
                 max_workers=thread_pool["customer"],
@@ -528,18 +544,24 @@ class Orchestrator:
 
             # 3. Composition Agent: 원자 조각 통합 조립 (Merge Master 역할 병행)
             print("\n🔄 [Composition Agent] 병합 조율 시작 (Merge Master)")
-            for branch_name, worktree_path in generated_branches:
-                if branch_name and worktree_path:
-                    print(f"   ⮑ Merging {branch_name}...")
-                    try:
-                        success, output = self.git_manager.merge_branch(branch_name, allow_unrelated=True)
-                        if not success:
-                            print(f"      [Warning] Merge conflict for {branch_name} - Composition Agent 개입 필요. ({output})")
-                    except Exception as e:
-                        print(f"      [Error] 병합 중 에러: {e}")
-                    finally:
-                        # 병합 완료/실패와 무관하게 워크트리 정리
-                        self._safe_remove_resource(branch_name, worktree_path, "post-merge")
+            if self.disable_merge_to_main:
+                print("   [Safety] main 병합을 건너뛰고 워크트리/브랜치만 정리합니다.")
+                for branch_name, worktree_path in generated_branches:
+                    if branch_name and worktree_path:
+                        self._safe_remove_resource(branch_name, worktree_path, "merge-disabled")
+            else:
+                for branch_name, worktree_path in generated_branches:
+                    if branch_name and worktree_path:
+                        print(f"   ⮑ Merging {branch_name}...")
+                        try:
+                            success, output = self.git_manager.merge_branch(branch_name, allow_unrelated=True)
+                            if not success:
+                                print(f"      [Warning] Merge conflict for {branch_name} - Composition Agent 개입 필요. ({output})")
+                        except Exception as e:
+                            print(f"      [Error] 병합 중 에러: {e}")
+                        finally:
+                            # 병합 완료/실패와 무관하게 워크트리 정리
+                            self._safe_remove_resource(branch_name, worktree_path, "post-merge")
             
             print("\n✨ Final Layout Composition...")
             with concurrent.futures.ThreadPoolExecutor(

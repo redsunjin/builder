@@ -45,6 +45,11 @@ def main() -> int:
     provider = os.getenv("AI_PROVIDER", "ollama")
     model_name = os.getenv("AI_MODEL", "llama3")
     print(f"[validate] provider={provider} model={model_name}")
+    os.environ.setdefault("ORCHESTRATOR_DISABLE_MERGE", "1")
+    print(
+        "[validate] ORCHESTRATOR_DISABLE_MERGE="
+        f"{os.getenv('ORCHESTRATOR_DISABLE_MERGE', '0')}"
+    )
 
     runtime_output_dir = os.path.abspath(
         os.getenv("RUNTIME_OUTPUT_DIR", os.path.join(REPO_ROOT, "output", "runtime"))
@@ -121,6 +126,7 @@ def main() -> int:
         "timestamp_utc": utcnow_iso(),
         "provider": provider,
         "model": model_name,
+        "orchestrator_disable_merge": os.getenv("ORCHESTRATOR_DISABLE_MERGE", "0"),
         "total": total,
         "ok_count": ok_count,
         "ok_rate": round((ok_count / total) * 100, 2) if total else 0.0,
