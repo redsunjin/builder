@@ -1,14 +1,16 @@
 # AI Builder - Local LLM Handoff Guide
 
 ## 개요
-이 문서는 **AI Builder (Beta Phase)** 개발을 로컬 LLM(Ollama 등)이 설치된 장비로 이관하여 후속 테스트 및 프롬프트 엔지니어링을 진행하기 위한 핸즈오프(Handoff) 문서입니다.
+이 문서는 **AI Builder (Alpha 기반, Beta 준비 단계)** 개발을 로컬 LLM(Ollama 등)이 설치된 장비로 이관하여 후속 테스트 및 프롬프트 엔지니어링을 진행하기 위한 핸즈오프(Handoff) 문서입니다.
 
 현재까지의 진행 상황은 다중 LLM 라우터(`src/utils/llm_router.py`)와 웹 UI(`web/app.py` 및 `index.html`) 연동이 100% 완료된 상태입니다. API 키가 없는 경우에도 안전하게 Mock 데이터로 파이프라인이 붕괴되지 않고 정상 구동되도록 검증을 마쳤습니다.
+현재 생애주기 기준 페이즈는 `config/lifecycle_config.json`의 `current_phase=Alpha`입니다.
 
-## 현재까지 구현된 기능 (v0.2 Beta)
+## 현재까지 구현된 기능 (v0.2 Alpha+)
 1.  **Git Worktree + 멀티 에이전트 오케스트레이션**: 병렬로 컴포넌트(브랜치) 생성, QA 검증, 최종 마스터 병합 파이프라인 완성.
 2.  **Multi-LLM 라우팅**: OpenAI(gpt-4o), Google(Gemini 1.5), Ollama(로컬) 중 설정에 따라 유연하게 모델 객체를 반환.
-3.  **Flask Web UI (GSD Live Phase)**: 채팅 형태로 프롬프트를 입력받고 반환된 HTML을 실시간 렌더링. 컴포넌트 캐시 히트 등 텔레메트리(Telemetry) 지표 출력 완비.
+3.  **Flask Web UI (Live 준비 단계)**: 채팅 형태로 프롬프트를 입력받고 반환된 HTML을 실시간 렌더링. 컴포넌트 캐시 히트 등 텔레메트리(Telemetry) 지표 출력 완비.
+4.  **신뢰성 강화**: 인터럽트/오류 상황의 워크트리 정리, stale recovery, 저널링, 스모크 테스트 스크립트 추가.
 
 ## 로컬 장비에서의 세팅 및 실행 방법
 
@@ -24,7 +26,7 @@ cp .env.example .env
 LLM 라우터 구동에 필요한 LangChain 관련 패키지가 `requirements.txt`에 명시되어 있지 않다면 수동으로 설치하거나, 이미 설치된 환경 정보를 동기화하십시오. (현재 장비에는 `langchain`, `langchain-community`, `langchain-openai`, `langchain-google-genai` 등이 설치되어 있습니다.)
 
 ### 3. 로컬 LLM (Ollama) 준비
-현재 `CustomerAgent`는 기본값으로 `provider="ollama"`, `model="llama3"`를 바라보고 있습니다.
+현재 에이전트 LLM은 하드코딩이 아닌 환경변수 우선(`AI_PROVIDER`, `AI_MODEL`)으로 동작하며, 기본값은 `provider="ollama"`, `model="llama3"`입니다.
 오프라인 로컬 환경에서 테스트하려면 다음 단계를 진행하십시오:
 
 1.  Ollama 설치 및 백그라운드 구동 (`http://localhost:11434`)
