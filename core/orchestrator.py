@@ -120,9 +120,14 @@ class Orchestrator:
         self.methodology = MethodologyAgent()
         
         self.repo_root = os.path.abspath(os.path.join(os.path.dirname(__file__), '..'))
+        self.runtime_output_dir = os.path.abspath(
+            os.getenv("RUNTIME_OUTPUT_DIR", os.path.join(self.repo_root, "output", "runtime"))
+        )
+        os.makedirs(self.runtime_output_dir, exist_ok=True)
+
         self.telemetry = Telemetry()
         self.git_manager = GitManager(self.repo_root)
-        self.journal_dir = os.path.join(self.repo_root, "output", "orchestrator_runs")
+        self.journal_dir = os.path.join(self.runtime_output_dir, "orchestrator_runs")
         os.makedirs(self.journal_dir, exist_ok=True)
 
         self._state_lock = threading.Lock()
@@ -330,46 +335,56 @@ class Orchestrator:
     def _recover_stale_worktrees(self):
         recovered_count = 0
 
+        journal_dirs = []
+        for candidate in (
+            self.journal_dir,
+            os.path.join(self.repo_root, "output", "orchestrator_runs"),
+        ):
+            normalized = os.path.abspath(candidate)
+            if normalized not in journal_dirs and os.path.isdir(normalized):
+                journal_dirs.append(normalized)
+
         # 1) 실행 중 상태로 남아있는 저널 기반 복구
-        for file_name in sorted(os.listdir(self.journal_dir)):
-            if not file_name.endswith(".json"):
-                continue
-
-            journal_path = os.path.join(self.journal_dir, file_name)
-            try:
-                with open(journal_path, 'r', encoding='utf-8') as f:
-                    payload = json.load(f)
-            except Exception:
-                continue
-
-            if payload.get("status") != "running":
-                continue
-
-            failed_resources = []
-            for resource in payload.get("resources", []):
-                branch_name = resource.get("branch_name")
-                worktree_path = resource.get("worktree_path")
-                if not worktree_path:
+        for journal_dir in journal_dirs:
+            for file_name in sorted(os.listdir(journal_dir)):
+                if not file_name.endswith(".json"):
                     continue
-                try:
-                    self.git_manager.remove_worktree(worktree_path, branch_name=branch_name, force=True)
-                    recovered_count += 1
-                except Exception as exc:
-                    resource_copy = dict(resource)
-                    resource_copy["last_error"] = str(exc)
-                    failed_resources.append(resource_copy)
 
-            if failed_resources:
-                payload["status"] = "partial_recovered"
-                payload["error"] = f"Recovered with {len(failed_resources)} resource(s) still failing cleanup."
-                payload["resources"] = failed_resources
-            else:
-                payload["status"] = "recovered"
-                payload["error"] = "Recovered stale resources during startup."
-                payload["resources"] = []
-            payload["updated_at"] = self._utcnow_iso()
-            payload["finished_at"] = self._utcnow_iso()
-            self._write_json_atomic(journal_path, payload)
+                journal_path = os.path.join(journal_dir, file_name)
+                try:
+                    with open(journal_path, 'r', encoding='utf-8') as f:
+                        payload = json.load(f)
+                except Exception:
+                    continue
+
+                if payload.get("status") != "running":
+                    continue
+
+                failed_resources = []
+                for resource in payload.get("resources", []):
+                    branch_name = resource.get("branch_name")
+                    worktree_path = resource.get("worktree_path")
+                    if not worktree_path:
+                        continue
+                    try:
+                        self.git_manager.remove_worktree(worktree_path, branch_name=branch_name, force=True)
+                        recovered_count += 1
+                    except Exception as exc:
+                        resource_copy = dict(resource)
+                        resource_copy["last_error"] = str(exc)
+                        failed_resources.append(resource_copy)
+
+                if failed_resources:
+                    payload["status"] = "partial_recovered"
+                    payload["error"] = f"Recovered with {len(failed_resources)} resource(s) still failing cleanup."
+                    payload["resources"] = failed_resources
+                else:
+                    payload["status"] = "recovered"
+                    payload["error"] = "Recovered stale resources during startup."
+                    payload["resources"] = []
+                payload["updated_at"] = self._utcnow_iso()
+                payload["finished_at"] = self._utcnow_iso()
+                self._write_json_atomic(journal_path, payload)
 
         # 2) 저널에 없는 temp_* 워크트리 복구
         stale_paths = self.git_manager.cleanup_stale_temp_worktrees()
@@ -536,11 +551,14 @@ class Orchestrator:
                 ).result()
             
             # 결과물 저장
-            output_file = os.path.join(self.repo_root, 'output', 'builder_output.html')
+            output_file = os.path.join(self.runtime_output_dir, 'builder_output.html')
             with open(output_file, 'w', encoding='utf-8') as f:
                 f.write(final_code)
                 
-            dashboard_file = self.telemetry.generate_dashboard_html(self.phase)
+            dashboard_file = self.telemetry.generate_dashboard_html(
+                self.phase,
+                output_path=os.path.join(self.runtime_output_dir, "dashboard.html"),
+            )
             efficiency = self.telemetry.get_efficiency_rate()
                 
             print(f"\n✅ [결과물 산출 성공] 파일 저장 완료: {output_file}")

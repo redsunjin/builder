@@ -94,42 +94,64 @@ def list_temp_candidates(git_manager: GitManager, repo_root: str, temp_prefix: s
     return candidates
 
 
+def resolve_journal_dirs(repo_root: str, explicit_journal_dir: str = "") -> list:
+    if explicit_journal_dir:
+        return [os.path.abspath(explicit_journal_dir)]
+
+    runtime_output_dir = os.path.abspath(
+        os.getenv("RUNTIME_OUTPUT_DIR", os.path.join(repo_root, "output", "runtime"))
+    )
+    candidates = [
+        os.path.join(runtime_output_dir, "orchestrator_runs"),
+        os.path.join(repo_root, "output", "orchestrator_runs"),
+    ]
+
+    resolved = []
+    for candidate in candidates:
+        normalized = os.path.abspath(candidate)
+        if normalized not in resolved:
+            resolved.append(normalized)
+    return resolved
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Cleanup stale temp worktrees and recover running journals.")
     parser.add_argument("--repo-root", default=os.path.abspath(os.path.join(SCRIPT_DIR, "..")), help="Repository root path")
+    parser.add_argument("--journal-dir", default="", help="Optional explicit journal directory")
     parser.add_argument("--temp-prefix", default="worktrees/temp_", help="Relative prefix used for temp worktrees")
     parser.add_argument("--dry-run", action="store_true", help="Show what would be cleaned without changing anything")
     args = parser.parse_args()
 
     repo_root = os.path.abspath(args.repo_root)
-    journal_dir = os.path.join(repo_root, "output", "orchestrator_runs")
+    journal_dirs = resolve_journal_dirs(repo_root, args.journal_dir)
     git_manager = GitManager(repo_root)
 
     journals_seen = 0
     journal_resources_cleaned = 0
 
-    for journal_path, payload in iter_running_journals(journal_dir):
-        journals_seen += 1
-        cleaned = cleanup_journal_resources(git_manager, payload, dry_run=args.dry_run)
-        journal_resources_cleaned += cleaned
+    for journal_dir in journal_dirs:
+        for journal_path, payload in iter_running_journals(journal_dir):
+            journals_seen += 1
+            cleaned = cleanup_journal_resources(git_manager, payload, dry_run=args.dry_run)
+            journal_resources_cleaned += cleaned
 
-        if args.dry_run:
-            print(f"[dry-run] would mark journal recovered: {journal_path}")
-            continue
+            if args.dry_run:
+                print(f"[dry-run] would mark journal recovered: {journal_path}")
+                continue
 
-        if payload.get("resources"):
-            payload["status"] = "partial_recovered"
-            payload["error"] = (
-                f"Recovered with {len(payload['resources'])} resource(s) still failing cleanup "
-                "by cleanup_stale_worktrees.py"
-            )
-        else:
-            payload["status"] = "recovered"
-            payload["error"] = "Recovered stale resources by cleanup_stale_worktrees.py"
-        payload["updated_at"] = utcnow_iso()
-        payload["finished_at"] = utcnow_iso()
-        write_json_atomic(journal_path, payload)
-        print(f"[ok] journal updated: {journal_path} (status={payload['status']})")
+            if payload.get("resources"):
+                payload["status"] = "partial_recovered"
+                payload["error"] = (
+                    f"Recovered with {len(payload['resources'])} resource(s) still failing cleanup "
+                    "by cleanup_stale_worktrees.py"
+                )
+            else:
+                payload["status"] = "recovered"
+                payload["error"] = "Recovered stale resources by cleanup_stale_worktrees.py"
+            payload["updated_at"] = utcnow_iso()
+            payload["finished_at"] = utcnow_iso()
+            write_json_atomic(journal_path, payload)
+            print(f"[ok] journal updated: {journal_path} (status={payload['status']})")
 
     if args.dry_run:
         candidates = list_temp_candidates(git_manager, repo_root, args.temp_prefix)

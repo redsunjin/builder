@@ -25,7 +25,9 @@ class GenerationAgent:
     def __init__(self):
         self.name = "GenerationAgent"
         base_dir = os.path.abspath(os.path.join(os.path.dirname(__file__), '..', '..'))
-        self.library_path = os.path.join(base_dir, "output", "components")
+        self.library_path = os.path.abspath(
+            os.getenv("COMPONENT_LIBRARY_PATH", os.path.join(base_dir, "output", "components"))
+        )
         os.makedirs(self.library_path, exist_ok=True)
 
         provider = os.getenv("GENERATION_LLM_PROVIDER", os.getenv("AI_PROVIDER", "openai"))
