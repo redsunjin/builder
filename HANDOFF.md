@@ -52,3 +52,26 @@ python run_server.py
     *   `worktrees/customer_agent/agent.py` 의 `PromptTemplate` 수정: "JSON만 반환하라"는 지시어 강화.
     *   `worktrees/generation_agent/agent.py` 수정: Tailwind CSS 코드 덩어리만 반환하도록 지시어 강화.
 3.  **UI/UX 개선:** Dashboard CSS 구조 디벨롭 및 Telemetry 레이아웃 고도화.
+
+## 안전 실행 프로토콜 (운영 권장)
+
+`run_pipeline()`를 호출하는 스크립트는 Git 워크트리/브랜치/merge를 동반할 수 있으므로, 아래 순서로 실행하는 것을 권장합니다.
+
+1.  **안전 회귀검증(merge 금지) 먼저 실행**
+    ```bash
+    source .venv/bin/activate
+    python scripts/safety_no_merge_regression.py
+    ```
+    - 이 테스트는 `ORCHESTRATOR_DISABLE_MERGE=1`을 강제하고, 실행 전/후 `HEAD`가 동일한지 검사합니다.
+
+2.  **신뢰성 스모크는 기본 안전 모드로 실행**
+    ```bash
+    python scripts/smoke_orchestrator_reliability.py
+    ```
+    - 기본값은 `ORCHESTRATOR_DISABLE_MERGE=1`이며, temp worktree 정리/저널 종료 상태를 검증합니다.
+
+3.  **merge 허용 실행은 명시적으로만 수행**
+    ```bash
+    python scripts/smoke_orchestrator_reliability.py --allow-merge
+    ```
+    - `--allow-merge`는 실제 `main` 변경 가능성이 있으므로, 로컬 실험 브랜치 또는 격리된 저장소에서만 사용하십시오.

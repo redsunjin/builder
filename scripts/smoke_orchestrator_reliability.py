@@ -12,6 +12,7 @@ import argparse
 import glob
 import json
 import os
+import subprocess
 import sys
 import time
 
@@ -53,6 +54,15 @@ def find_latest_journal(journal_dir: str, started_at: float) -> str:
     return candidates[0][1]
 
 
+def get_head_sha(repo_root: str) -> str:
+    output = subprocess.check_output(
+        ["git", "rev-parse", "HEAD"],
+        cwd=repo_root,
+        text=True,
+    )
+    return output.strip()
+
+
 def main() -> int:
     parser = argparse.ArgumentParser(description="Run orchestrator reliability smoke test.")
     parser.add_argument(
@@ -60,16 +70,30 @@ def main() -> int:
         default="헤더와 버튼 하나 만들어줘",
         help="User intent used for smoke pipeline run",
     )
+    parser.add_argument(
+        "--allow-merge",
+        action="store_true",
+        help="Allow merge to main during smoke run (unsafe for routine checks).",
+    )
     args = parser.parse_args()
 
+    disable_merge = not args.allow_merge
+    os.environ["ORCHESTRATOR_DISABLE_MERGE"] = "1" if disable_merge else "0"
+    print(
+        "[mode] ORCHESTRATOR_DISABLE_MERGE="
+        f"{os.environ['ORCHESTRATOR_DISABLE_MERGE']}"
+    )
+
     git_manager = GitManager(REPO_ROOT)
+    head_before = get_head_sha(REPO_ROOT)
     before_temp = list_temp_worktrees(git_manager)
     if before_temp:
         print(f"[warn] existing temp worktrees before smoke: {before_temp}")
 
     started_at = time.time()
     orchestrator = Orchestrator()
-    result = orchestrator.run_pipeline("smoke_reliability_session", args.intent)
+    session_id = f"smoke_reliability_{int(started_at)}"
+    result = orchestrator.run_pipeline(session_id, args.intent)
 
     if not isinstance(result, dict) or "html" not in result or "metrics" not in result:
         raise RuntimeError("run_pipeline did not return expected API payload (html + metrics).")
@@ -94,8 +118,16 @@ def main() -> int:
     if resources:
         raise RuntimeError(f"journal still contains active resources: {resources}")
 
+    head_after = get_head_sha(REPO_ROOT)
+    if disable_merge and head_after != head_before:
+        raise RuntimeError(
+            "HEAD changed while merge was disabled. "
+            f"before={head_before} after={head_after}"
+        )
+
     print("[ok] reliability smoke passed")
     print(f"[ok] journal={os.path.basename(latest_journal)} status={status}")
+    print(f"[ok] head_before={head_before} head_after={head_after}")
     return 0
 
 
