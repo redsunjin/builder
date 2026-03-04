@@ -41,6 +41,39 @@ class MockLLM(FakeListChatModel):
         print(f"[Mock {self.provider}/{self.model_name}] LLM 호출 모방")
         return super().invoke(prompt, **kwargs)
 
+
+def _get_float_env(name: str, default: float) -> float:
+    raw = os.getenv(name)
+    if raw is None:
+        return default
+    try:
+        value = float(raw)
+    except (TypeError, ValueError):
+        return default
+    if value <= 0:
+        return default
+    return value
+
+
+def _build_ollama_model(model_name: str):
+    base_kwargs = {"model": model_name, "temperature": 0.7}
+    ollama_host = os.getenv("OLLAMA_HOST")
+    if ollama_host:
+        base_kwargs["base_url"] = ollama_host
+
+    timeout_seconds = _get_float_env("OLLAMA_TIMEOUT_SECONDS", 45.0)
+
+    # ChatOllama 버전에 따라 timeout 인자명이 다를 수 있어 순차 시도
+    for timeout_key in ("timeout", "request_timeout"):
+        try:
+            return ChatOllama(**base_kwargs, **{timeout_key: timeout_seconds})
+        except TypeError:
+            continue
+
+    print("[Warning] ChatOllama timeout 인자를 지원하지 않아 기본값으로 실행합니다.")
+    return ChatOllama(**base_kwargs)
+
+
 def get_llm(provider: str = "ollama", model_name: str = "llama3") -> BaseChatModel:
     """
     제공자와 모델을 받아 Langchain BaseChatModel 인스턴스를 반환하는 팩토리 함수.
@@ -66,9 +99,8 @@ def get_llm(provider: str = "ollama", model_name: str = "llama3") -> BaseChatMod
         if ChatOllama is None:
             print(f"[Warning] langchain_community 미설치. Mock LLM을 반환합니다.")
             return MockLLM(provider, model_name)
-        # Ollama는 로컬에서 도는 경우 별도 API 키 검사를 하지 않음
-        # 포트나 호스트 등 추가 설정이 필요할 수 있으나 MVP를 위해 기본값 사용
-        return ChatOllama(model=model_name, temperature=0.7)
+        # 로컬 Ollama 경로에서 응답 무한대기를 막기 위해 timeout을 적용
+        return _build_ollama_model(model_name)
         
     else:
         print(f"[Warning] 알 수 없는 provider: {provider}. Mock LLM을 반환합니다.")

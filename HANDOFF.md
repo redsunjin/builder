@@ -34,6 +34,10 @@ LLM 라우터 구동에 필요한 LangChain 관련 패키지가 `requirements.tx
     ```bash
     ollama pull llama3
     ```
+3.  필요 시 타임아웃 조정
+    ```bash
+    export OLLAMA_TIMEOUT_SECONDS=45
+    ```
 
 ### 4. 서버 구동
 디버그 워치독(watchdog)에 의한 재시작 버그를 해결하기 위해 `run_server.py`는 `debug=False`로 세팅되어 있습니다. 터미널에서 다음 명령어를 실행하십시오.
@@ -75,3 +79,7 @@ python run_server.py
     python scripts/smoke_orchestrator_reliability.py --allow-merge
     ```
     - `--allow-merge`는 실제 `main` 변경 가능성이 있으므로, 로컬 실험 브랜치 또는 격리된 저장소에서만 사용하십시오.
+
+4.  **CI 안전 게이트**
+    - GitHub Actions `Safety Regression` 워크플로가 PR/`main` push 시 자동 실행됩니다.
+    - 브랜치 보호 규칙에서 이 체크를 Required로 지정하면 `main` 이력 오염을 더 강하게 방지할 수 있습니다.
