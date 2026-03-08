@@ -83,3 +83,9 @@ python run_server.py
 4.  **CI 안전 게이트**
     - GitHub Actions `Safety Regression` 워크플로가 PR/`main` push 시 자동 실행됩니다.
     - 브랜치 보호 규칙에서 이 체크를 Required로 지정하면 `main` 이력 오염을 더 강하게 방지할 수 있습니다.
+    - 토큰이 준비되어 있으면 아래 스크립트로 자동 설정할 수 있습니다.
+    ```bash
+    export GH_TOKEN=ghp_xxx
+    python scripts/configure_branch_protection.py --bootstrap-protection
+    ```
+    - 기존 브랜치 보호가 이미 있다면 `--bootstrap-protection` 없이 실행하면 required check만 병합합니다.
