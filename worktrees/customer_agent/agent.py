@@ -46,7 +46,7 @@ class CustomerAgent:
             self.chain = None
 
     def _get_format_instructions(self) -> str:
-        interfaces_path = os.path.join(os.path.dirname(__file__), '..', '..', 'interfaces', 'agent_interfaces.json')
+        interfaces_path = os.path.join(os.path.dirname(__file__), '..', '..', 'config', 'agent_interfaces.json')
         try:
             with open(interfaces_path, 'r', encoding='utf-8') as f:
                 schema = json.load(f)
