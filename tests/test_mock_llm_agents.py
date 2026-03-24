@@ -45,6 +45,25 @@ class MockLLMAgentTest(unittest.TestCase):
         self.assertIn("text_input", result["required_components"])
         self.assertIn("로그인 UI", result["user_intent"])
 
+    def test_customer_agent_normalizes_abstract_components(self):
+        agent = CustomerAgent()
+
+        result = agent._normalize_response(
+            "session-456",
+            "매출 그래프와 KPI 카드가 있는 대시보드",
+            {
+                "session_id": "session-456",
+                "required_components": ["chart", "card", "dashboard_layout"],
+                "user_intent": "Dashboard with KPI cards",
+            },
+        )
+
+        self.assertEqual(result["session_id"], "session-456")
+        self.assertIn("custom_graph", result["required_components"])
+        self.assertIn("kpi_card", result["required_components"])
+        self.assertNotIn("dashboard_layout", result["required_components"])
+        self.assertEqual(len(result["required_components"]), len(set(result["required_components"])))
+
     def test_generation_agent_creates_mock_component_metadata(self):
         with tempfile.TemporaryDirectory() as temp_dir:
             os.environ["COMPONENT_LIBRARY_PATH"] = temp_dir

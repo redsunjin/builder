@@ -1,0 +1,12 @@
+{
+    "type": "component",
+    "name": "chat_interface",
+    "html_template": "<section class=\"flex h-[520px] flex-col rounded-3xl border border-slate-200 bg-white shadow-sm\"><header class=\"border-b border-slate-200 px-5 py-4 text-base font-semibold text-slate-900\">{title}</header><div class=\"flex-1 space-y-3 overflow-y-auto px-5 py-4\"><div class=\"max-w-[80%] rounded-2xl rounded-bl-md bg-slate-900 px-4 py-3 text-sm text-white\">{text}</div><div class=\"ml-auto max-w-[80%] rounded-2xl rounded-br-md bg-slate-100 px-4 py-3 text-sm text-slate-900\">{param}</div></div><form class=\"border-t border-slate-200 p-4\"><input type=\"text\" class=\"w-full rounded-xl border border-slate-300 px-4 py-3\" placeholder=\"{placeholder}\" /></form></section>",
+    "required_params": [
+        "title",
+        "text",
+        "param",
+        "placeholder"
+    ],
+    "description": "A mobile-style chat interface shell."
+}

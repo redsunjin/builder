@@ -1,0 +1,10 @@
+{
+    "type": "component",
+    "name": "search_bar",
+    "html_template": "<form class=\"flex w-full gap-3\"><input type=\"text\" class=\"flex-1 rounded-xl border border-slate-300 px-4 py-3\" placeholder=\"{placeholder}\" /><button class=\"rounded-xl bg-slate-900 px-4 py-3 text-sm font-medium text-white\">{text}</button></form>",
+    "required_params": [
+        "placeholder",
+        "text"
+    ],
+    "description": "A horizontal search form with input and button."
+}

@@ -1,0 +1,11 @@
+{
+    "type": "component",
+    "name": "product_card",
+    "html_template": "<article class=\"rounded-2xl border border-slate-200 bg-white p-4 shadow-sm\"><div class=\"aspect-[4/3] rounded-xl bg-slate-100\"></div><h3 class=\"mt-4 text-lg font-semibold text-slate-900\">{title}</h3><p class=\"mt-2 text-sm text-slate-600\">{text}</p><div class=\"mt-4 flex items-center justify-between\"><span class=\"text-base font-semibold text-slate-900\">{param}</span><button class=\"rounded-md bg-slate-900 px-3 py-2 text-sm font-medium text-white\">Buy</button></div></article>",
+    "required_params": [
+        "title",
+        "text",
+        "param"
+    ],
+    "description": "An ecommerce product card with CTA."
+}

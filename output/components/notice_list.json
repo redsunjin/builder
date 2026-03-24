@@ -1,0 +1,11 @@
+{
+    "type": "component",
+    "name": "notice_list",
+    "html_template": "<section class=\"rounded-2xl border border-slate-200 bg-white p-6 shadow-sm\"><h2 class=\"text-lg font-semibold text-slate-900\">{title}</h2><ul class=\"mt-4 divide-y divide-slate-200\"><li class=\"flex items-center justify-between py-3\"><span class=\"text-sm text-slate-700\">{text}</span><button class=\"text-sm font-medium text-slate-900\">View</button></li><li class=\"flex items-center justify-between py-3\"><span class=\"text-sm text-slate-700\">{param}</span><button class=\"text-sm font-medium text-slate-900\">View</button></li></ul></section>",
+    "required_params": [
+        "title",
+        "text",
+        "param"
+    ],
+    "description": "A simple notices list with action buttons."
+}

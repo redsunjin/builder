@@ -212,7 +212,7 @@ class MockLLM(FakeListChatModel):
     def _build_response_text(self, prompt_text: str) -> str:
         if "extracts the required UI components" in prompt_text:
             return self._mock_customer_response(prompt_text)
-        if "Generate a minimal, reusable HTML UI component named" in prompt_text:
+        if "HTML UI component named" in prompt_text:
             return self._mock_component_response(prompt_text)
         if "You are an expert web layout composer." in prompt_text:
             return self._mock_composition_response(prompt_text)

@@ -39,19 +39,24 @@ class GenerationAgent:
             self.prompt = PromptTemplate(
                 template=(
                     "You are an expert frontend developer.\n"
-                    "Generate a minimal, reusable HTML UI component named '{component_name}' using Tailwind CSS classes.\n"
+                    "Generate exactly one atomic, reusable HTML UI component named '{component_name}' using Tailwind CSS classes.\n"
                     "Requirements:\n"
+                    "- Return exactly one JSON object and nothing else.\n"
+                    "- Do NOT include markdown fences, explanations, comments, or extra text.\n"
+                    "- Generate a single component fragment, NOT a full page or multi-section layout.\n"
                     "- Do NOT include <html>, <head>, or <body> tags.\n"
-                    "- Output ONLY the component's HTML code.\n"
+                    "- Do NOT include <script> or <style> tags.\n"
+                    "- Prefer one root element and concise markup.\n"
                     "- Do NOT include any background colors on the outermost layer of the component so it blends naturally.\n"
-                    "- Use generic placeholders like {{text}} or {{title}} for content that should be dynamic.\n"
+                    "- Use generic placeholders only when needed: {{title}}, {{text}}, {{placeholder}}, {{data_type}}, {{param}}.\n"
+                    "- If the component name is abstract, still produce the closest reusable single component fragment for that name.\n"
                     "Return the response strictly as a JSON object with this exact format, without any markdown formatting wrappers:\n"
                     "{{\n"
                     '  "type": "component",\n'
                     '  "name": "{component_name}",\n'
                     '  "html_template": "...",\n'
                     '  "required_params": ["list of variables like text, title"],\n'
-                    '  "description": "brief explanation"\n'
+                    '  "description": "brief explanation under 12 words"\n'
                     "}}\n"
                 ),
                 input_variables=["component_name"]

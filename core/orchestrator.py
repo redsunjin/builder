@@ -213,6 +213,7 @@ class Orchestrator:
                 Orchestrator._startup_recovery_running = False
 
     def _write_json_atomic(self, path: str, payload: dict):
+        os.makedirs(os.path.dirname(path), exist_ok=True)
         temp_path = f"{path}.tmp"
         with open(temp_path, 'w', encoding='utf-8') as f:
             json.dump(payload, f, ensure_ascii=False, indent=2)

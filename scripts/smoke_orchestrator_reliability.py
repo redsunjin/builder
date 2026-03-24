@@ -38,6 +38,15 @@ def list_temp_worktrees(git_manager: GitManager) -> list:
     return sorted(items)
 
 
+def wait_for_temp_worktree_cleanup(git_manager: GitManager, timeout_sec: float = 3.0) -> list:
+    deadline = time.time() + timeout_sec
+    latest = list_temp_worktrees(git_manager)
+    while latest and time.time() < deadline:
+        time.sleep(0.25)
+        latest = list_temp_worktrees(git_manager)
+    return latest
+
+
 def find_latest_journal(journal_dir: str, started_at: float) -> str:
     candidates = []
     for path in glob.glob(os.path.join(journal_dir, "run_*.json")):
@@ -98,7 +107,7 @@ def main() -> int:
     if not isinstance(result, dict) or "html" not in result or "metrics" not in result:
         raise RuntimeError("run_pipeline did not return expected API payload (html + metrics).")
 
-    after_temp = list_temp_worktrees(git_manager)
+    after_temp = wait_for_temp_worktree_cleanup(git_manager)
     if after_temp:
         raise RuntimeError(f"temp worktrees remain after run: {after_temp}")
 
